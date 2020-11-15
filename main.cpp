@@ -1,19 +1,31 @@
-#include <cmath>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <cstdlib>
-
 #include "vector.h"
 #include "sphere.h"
+#include <cmath>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <stdint.h>
+#include <vector>
+
+#ifdef _EE
+#include <gsKit.h>
+
+struct gsGlobal *gs;
+struct gsTexture texBuffer;
+#endif
 
 const Vec3f origin = Vec3f(0, 0, 0);
 
-void render(const std::vector<Sphere> & spheres, const std::vector<Light>& lights) {
-    const double width    = 320;
-    const double height   = 240;
+static const size_t width = 320;
+static const size_t height = 240;
+std::vector<uint32_t> ps2Framebuffer;
+
+void render(const std::vector<Sphere> &spheres, const std::vector<Light>&lights, uint32_t *ps2Fb) {
     const double fov      = M_PI/2.;
-    std::vector<Vec3f> framebuffer(width*height);
+#ifndef _EE
+    std::vector<Vec3f> framebuffer;
+    framebuffer.resize(static_cast<size_t>(width*height));
+#endif
 
     for (size_t j = 0; j<height; j++) {
         for (size_t i = 0; i<width; i++) {
@@ -21,7 +33,11 @@ void render(const std::vector<Sphere> & spheres, const std::vector<Light>& light
             double y = -(2*(j + 0.5)/height - 1)*tan(fov/2.);
             Vec3f dir = Vec3f(x, y, -1).normalize();
             Ray ray (origin, dir);
+//#ifdef _EE
+            ps2Fb[i + j * width] = ray.cast(spheres, lights).asGsColor();
+//#else
             framebuffer[i+j*width] = ray.cast(spheres, lights);
+//#endif
         }
     }
 
@@ -30,7 +46,29 @@ void render(const std::vector<Sphere> & spheres, const std::vector<Light>& light
 }
 
 int main() {
-    Material      ivory(
+    ps2Framebuffer.resize(width * height);
+#ifdef _EE
+    gs = gsKit_init_global();
+    texBuffer.PSM = GS_PSM_CT32;
+    texBuffer.Width = width;
+    texBuffer.Height = height;
+    texBuffer.Vram = gsKit_vram_alloc(gs, gsKit_texture_size(texBuffer.Width, texBuffer.Height, texBuffer.PSM), GSKIT_ALLOC_USERBUFFER);
+    gs->DrawOrder = GS_OS_PER;
+    gs->PSM = GS_PSM_CT32;
+    gs->PSMZ = GS_PSMZ_16S;
+    gs->ZBuffering = GS_SETTING_ON;
+    dmaKit_init(D_CTRL_RELE_OFF,D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC,
+                D_CTRL_STD_OFF, D_CTRL_RCYC_8, 1 << DMA_CHANNEL_GIF);
+    dmaKit_chan_init(DMA_CHANNEL_GIF);
+    gsKit_init_screen(gs);
+    gsKit_clear(gs, GS_SETREG_RGBAQ(0xFF,0xFF,0xFF,0x00,0x00)); // Clear with white
+    gsKit_mode_switch(gs, GS_PERSISTENT);
+    gsKit_set_test(gs, GS_ZTEST_OFF);
+    gsKit_queue_exec(gs);
+    gsKit_sync_flip(gs);
+#endif
+
+    Material ivory(
                   Vec3f(0.4, 0.4, 0.3), // Color
                   Vec3f(0.6,  0.3, 0),  // Albedo
                   50.);                 // Specular exponent
@@ -39,7 +77,7 @@ int main() {
                   Vec3f(0.9,  0.1, 0),  // Albedo
                   10.);                 // Specular exponent
 
-    std::vector<Light>  lights;
+    std::vector<Light> lights;
     lights.push_back(Light(Vec3f(-20, 20,  20), 1.5));
     lights.push_back(Light(Vec3f( 30, 50, -25), 1.8));
     lights.push_back(Light(Vec3f( 30, 20,  30), 1.7));
@@ -50,7 +88,30 @@ int main() {
     spheres.push_back(Sphere(Vec3f( 1.5, -0.5, -18), 3, red_rubber));
     spheres.push_back(Sphere(Vec3f( 7,    5,   -18), 4,      ivory));
 
-    render(spheres, lights);
+    render(spheres, lights, ps2Framebuffer.data());
+#ifdef _EE
+    gsKit_clear(gs, GS_SETREG_RGBAQ(0x00,0xAA,0x00,0x00,0x00)); // Clear with green
+    texBuffer.Mem = ps2Framebuffer;
+    gsKit_texture_upload(gs, &texBuffer);
+    gsKit_prim_sprite_texture(gs, &texBuffer,
+        0,                                     /* X1 */
+        0,                                     /* Y1 */
+        0,                                     /* U1 */
+        0,                                     /* V1 */
+        width,                                 /* X2 */ // Stretch to screen width
+        height,                                /* Y2 */ // Stretch to screen height
+        texBuffer.Width,                       /* U2 */
+        texBuffer.Height,                      /* V2 */
+        2,                                     /* Z  */
+        GS_SETREG_RGBA(0x80, 0x80, 0x80, 0x00) /* RGBA */
+    );
+    gsKit_queue_exec(gs);
+    while (1)
+    {
+        gsKit_sync_flip(gs);
+        sleep(1);
+    };
+#endif
 
     return 0;
 }
