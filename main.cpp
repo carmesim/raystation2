@@ -10,8 +10,8 @@
 const Vec3f origin = Vec3f(0, 0, 0);
 
 void render(const std::vector<Sphere> & spheres, const std::vector<Light>& lights) {
-    const double width    = 1024;
-    const double height   = 768;
+    const double width    = 320;
+    const double height   = 240;
     const double fov      = M_PI/2.;
     std::vector<Vec3f> framebuffer(width*height);
 
@@ -51,5 +51,6 @@ int main() {
     spheres.push_back(Sphere(Vec3f( 7,    5,   -18), 4,      ivory));
 
     render(spheres, lights);
+
     return 0;
 }
