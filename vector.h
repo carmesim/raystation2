@@ -8,6 +8,9 @@
 #endif
 #include <stdint.h>
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
 class Vec3f {
 public:
     static Vec3f reflect(const Vec3f& I, const Vec3f& J);

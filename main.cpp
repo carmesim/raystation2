@@ -1,10 +1,13 @@
-#include "vector.h"
+#include "light.h"
+#include "ray.h"
 #include "sphere.h"
+#include "vector.h"
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <stdint.h>
+#include <unistd.h>
 #include <vector>
 
 #ifdef _EE
@@ -18,13 +21,18 @@ const Vec3f origin = Vec3f(0, 0, 0);
 
 static const size_t width = 320;
 static const size_t height = 240;
-std::vector<uint32_t> ps2Framebuffer;
 
-void render(const std::vector<Sphere> &spheres, const std::vector<Light>&lights, uint32_t *ps2Fb) {
+#ifdef _EE
+std::vector<u32> ps2Framebuffer;
+#endif
+
+void render(const std::vector<Sphere> &spheres, const std::vector<Light>&lights,
+            u32 *ps2Fb = NULL) {
     const double fov      = M_PI/2.;
 #ifndef _EE
     std::vector<Vec3f> framebuffer;
     framebuffer.resize(static_cast<size_t>(width*height));
+    (void)(ps2Fb);
 #endif
 
     for (size_t j = 0; j<height; j++) {
@@ -32,28 +40,51 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light>&lights,
             double x =  (2*(i + 0.5)/width  - 1)*tan(fov/2.)*width/height;
             double y = -(2*(j + 0.5)/height - 1)*tan(fov/2.);
             Vec3f dir = Vec3f(x, y, -1).normalize();
-            Ray ray (origin, dir);
-//#ifdef _EE
+            Ray ray(origin, dir);
+#ifdef _EE
             ps2Fb[i + j * width] = ray.cast(spheres, lights).asGsColor();
-//#else
+#else
             framebuffer[i+j*width] = ray.cast(spheres, lights);
-//#endif
+#endif
         }
     }
+
+#ifndef _EE
+    std::ofstream outStream("out.ppm");
+    outStream << "P3\n" << width << ' ' << height << '\n';
+    outStream << 65535 << '\n';
+    for (size_t line = 0; line < height; line++)
+    {
+        for (size_t col = 0; col < width; col++)
+        {
+            uint16_t r = MAX(MIN(framebuffer[line * width + col].x, 1.0), 0.0) * 65535;
+            uint16_t g = MAX(MIN(framebuffer[line * width + col].y, 1.0), 0.0) * 65535;
+            uint16_t b = MAX(MIN(framebuffer[line * width + col].z, 1.0), 0.0) * 65535;
+
+            outStream << r << ' ' << g << ' ' << b << "  ";
+        }
+        outStream << '\n';
+    }
+#endif
 
     // TODO: save the framebuffer to the PS2's framebuffer
     // Preferably directly, within the loop above.
 }
 
 int main() {
-    ps2Framebuffer.resize(width * height);
 #ifdef _EE
+    ps2Framebuffer.resize(width * height);
     gs = gsKit_init_global();
     texBuffer.PSM = GS_PSM_CT32;
     texBuffer.Width = width;
     texBuffer.Height = height;
     texBuffer.Vram = gsKit_vram_alloc(gs, gsKit_texture_size(texBuffer.Width, texBuffer.Height, texBuffer.PSM), GSKIT_ALLOC_USERBUFFER);
     gs->DrawOrder = GS_OS_PER;
+    gs->Interlace = GS_NONINTERLACED;
+    gs->Field = GS_FIELD;
+    gs->DrawField = GS_FIELD_EVEN;
+    gs->Width = width;
+    gs->Height = height;
     gs->PSM = GS_PSM_CT32;
     gs->PSMZ = GS_PSMZ_16S;
     gs->ZBuffering = GS_SETTING_ON;
@@ -88,29 +119,33 @@ int main() {
     spheres.push_back(Sphere(Vec3f( 1.5, -0.5, -18), 3, red_rubber));
     spheres.push_back(Sphere(Vec3f( 7,    5,   -18), 4,      ivory));
 
-    render(spheres, lights, ps2Framebuffer.data());
+    render(spheres, lights
+#ifdef _EE
+           , &ps2Framebuffer[0]
+#endif
+           );
 #ifdef _EE
     gsKit_clear(gs, GS_SETREG_RGBAQ(0x00,0xAA,0x00,0x00,0x00)); // Clear with green
-    texBuffer.Mem = ps2Framebuffer;
+    texBuffer.Mem = &ps2Framebuffer[0];
     gsKit_texture_upload(gs, &texBuffer);
     gsKit_prim_sprite_texture(gs, &texBuffer,
         0,                                     /* X1 */
         0,                                     /* Y1 */
         0,                                     /* U1 */
         0,                                     /* V1 */
-        width,                                 /* X2 */ // Stretch to screen width
-        height,                                /* Y2 */ // Stretch to screen height
+        gs->Width,                                 /* X2 */ // Stretch to screen width
+        gs->Height,                                /* Y2 */ // Stretch to screen height
         texBuffer.Width,                       /* U2 */
         texBuffer.Height,                      /* V2 */
         2,                                     /* Z  */
         GS_SETREG_RGBA(0x80, 0x80, 0x80, 0x00) /* RGBA */
     );
     gsKit_queue_exec(gs);
+    gsKit_sync_flip(gs);
     while (1)
     {
-        gsKit_sync_flip(gs);
-        sleep(1);
-    };
+
+    }
 #endif
 
     return 0;

@@ -15,6 +15,8 @@ file(GLOB raystation2_SRC
 add_executable(raystation2 ${raystation2_SRC})
 
 if (CMAKE_C_COMPILER MATCHES "ee-gcc")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -fomit-frame-pointer")
+
     add_definitions(-D_EE)
     include_directories(-I$ENV{PS2SDK}/ee/include -I$ENV{PS2SDK}/common/include -I$ENV{PS2SDK}/ports/include -I$ENV{PS2DEV}/gsKit/include)
 

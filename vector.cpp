@@ -1,8 +1,5 @@
 #include "vector.h"
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
-
 Vec3f Vec3f::reflect(const Vec3f &I, const Vec3f &N)
 {
     return I - N*2.f*(I.dot(N));
@@ -49,9 +46,9 @@ double Vec3f::operator[](int index)
 #ifdef _EE
 uint32_t Vec3f::asGsColor()
 {
-    unsigned char r = static_cast<unsigned char>(255.0 * MIN(0.0, MAX(1.0, x)));
-    unsigned char g = static_cast<unsigned char>(255.0 * MIN(0.0, MAX(1.0, y)));
-    unsigned char b = static_cast<unsigned char>(255.0 * MIN(0.0, MAX(1.0, z)));
+    unsigned char r = static_cast<unsigned char>(255.0 * MAX(0.0, MIN(1.0, x)));
+    unsigned char g = static_cast<unsigned char>(255.0 * MAX(0.0, MIN(1.0, y)));
+    unsigned char b = static_cast<unsigned char>(255.0 * MAX(0.0, MIN(1.0, z)));
     return GS_SETREG_RGBA(r, g, b, 0xFF);
 }
 #endif

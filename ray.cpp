@@ -1,4 +1,5 @@
 #include "ray.h"
+#include "sphere.h"
 #include "vector.h"
 
 const double shadow_bias = 1e-3;
