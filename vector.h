@@ -14,19 +14,32 @@
 class Vec3f {
 public:
     static Vec3f reflect(const Vec3f& I, const Vec3f& J);
-    double x, y, z;
-    Vec3f () : x(0), y(0), z(0) {}
-    Vec3f (double _x, double _y, double _z) : x(_x), y(_y), z(_z) {}
 
-    double norm();
+    float vector[4];
 
-    double dot(const Vec3f & other) const;;
+    float &x;
+    float &y;
+    float &z;
 
-    Vec3f operator*(double k) const;
+    Vec3f () : x(vector[0]), y(vector[1]), z(vector[2]) {}
+    Vec3f (float _x, float _y, float _z) : x(vector[0]), y(vector[1]), z(vector[2])
+    {
+        vector[0] = _x;
+        vector[1] = _y;
+        vector[2] = _z;
+    }
+
+    float norm();
+
+    float dot(const Vec3f &other) const;;
+
+    Vec3f operator*(float k) const;
+
+    Vec3f& operator=(const Vec3f &other);
 
     Vec3f normalize();
 
-    double operator[](int index);
+    float operator[](int index);
 
 #ifdef _EE
     uint32_t asGsColor();

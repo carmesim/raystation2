@@ -5,43 +5,47 @@ Vec3f Vec3f::reflect(const Vec3f &I, const Vec3f &N)
     return I - N*2.f*(I.dot(N));
 }
 
-double Vec3f::norm() {
+float Vec3f::norm() {
     return sqrt(this->x * this->x +
                 this->y * this->y +
                 this->z * this->z);
 }
 
-double Vec3f::dot(const Vec3f & other) const {
+float Vec3f::dot(const Vec3f & other) const {
     return  this->x * other.x +
             this->y * other.y +
             this->z * other.z;
 }
 
-Vec3f Vec3f::operator*(double k) const
+Vec3f Vec3f::operator*(float k) const
 {
     return Vec3f(this->x * k,
                  this->y * k,
                  this->z * k);
 }
 
+Vec3f & Vec3f::operator=(const Vec3f & other)
+{
+    vector[0] = other.vector[0];
+    vector[1] = other.vector[1];
+    vector[2] = other.vector[2];
+    vector[3] = other.vector[3];
+
+    return *this;
+}
+
 Vec3f Vec3f::normalize() {
     return (*this) * (1/this->norm());
 }
 
-double Vec3f::operator[](int index)
+float Vec3f::operator[](int index)
 {
-    if (index > 2 || index < 0)
+    if (index > 3 || index < 0)
     {
-        // TODO: proper exception or something
-        std::exit(-1);
+        return -0.0f;
     }
 
-    switch (index)
-    {
-        case 0: return x;
-        case 1: return y;
-        case 2: return z;
-    }
+    return vector[index];
 }
 #ifdef _EE
 uint32_t Vec3f::asGsColor()

@@ -1,7 +1,7 @@
 #include "ray.h"
 #include "sphere.h"
 
-bool Sphere::intersect_with_ray(const Ray & ray, double &t0) const {
+bool Sphere::intersect_with_ray(const Ray & ray, float &t0) const {
     Vec3f L = center - ray.m_origin;
     float tca = L.dot(ray.m_direction);
     float d2 = L.dot(L) - tca*tca;

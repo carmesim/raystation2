@@ -24,11 +24,13 @@ static const size_t height = 240;
 
 #ifdef _EE
 std::vector<u32> ps2Framebuffer;
+#else
+typedef uint32_t u32;
 #endif
 
 void render(const std::vector<Sphere> &spheres, const std::vector<Light>&lights,
             u32 *ps2Fb = NULL) {
-    const double fov      = M_PI/2.;
+    const float fov      = M_PI/2.f;
 #ifndef _EE
     std::vector<Vec3f> framebuffer;
     framebuffer.resize(static_cast<size_t>(width*height));
@@ -37,8 +39,8 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light>&lights,
 
     for (size_t j = 0; j<height; j++) {
         for (size_t i = 0; i<width; i++) {
-            double x =  (2*(i + 0.5)/width  - 1)*tan(fov/2.)*width/height;
-            double y = -(2*(j + 0.5)/height - 1)*tan(fov/2.);
+            float x =  (2.f*(i + 0.5f)/width  - 1)*tanf(fov/2.f)*width/height;
+            float y = -(2.f*(j + 0.5f)/height - 1)*tanf(fov/2.f);
             Vec3f dir = Vec3f(x, y, -1).normalize();
             Ray ray(origin, dir);
 #ifdef _EE

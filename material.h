@@ -12,7 +12,7 @@ struct Material
     Vec3f diffuse_color;
     Vec3f albedo;
     // Specular exponent
-    double spec_exp;
+    float spec_exp;
 };
 
 #endif // MATERIAL_H
