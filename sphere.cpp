@@ -10,8 +10,5 @@ bool Sphere::intersect_with_ray(const Ray & ray, float &t0) const {
     t0       = tca - thc;
     float t1 = tca + thc;
     if (t0 < 0) t0 = t1;
-    if (t0 < 0) {
-        return false;
-    }
-    return true;
+    return t0 >= 0;
 }

@@ -8,30 +8,33 @@
 #endif
 #include <stdint.h>
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
-
 class Vec3f {
 public:
     static Vec3f reflect(const Vec3f& I, const Vec3f& J);
 
-    float vector[4];
+    struct VecComponents
+    {
+        float x;
+        float y;
+        float z;
+        float w;
+    };
+
+    VecComponents vector;
 
     float &x;
     float &y;
     float &z;
 
-    Vec3f () : x(vector[0]), y(vector[1]), z(vector[2]) {}
-    Vec3f (float _x, float _y, float _z) : x(vector[0]), y(vector[1]), z(vector[2])
-    {
-        vector[0] = _x;
-        vector[1] = _y;
-        vector[2] = _z;
-    }
+    constexpr Vec3f () : vector({}), x(vector.x), y(vector.y), z(vector.z) {}
+    constexpr Vec3f (float _x, float _y, float _z) : vector({_x, _y, _z, .0f}), 
+        x(vector.x), y(vector.y), z(vector.z) {}
+    constexpr Vec3f (const Vec3f &other) : vector(other.vector), x(vector.x), y(vector.y), 
+        z(vector.z) {}
 
     float norm();
 
-    float dot(const Vec3f &other) const;;
+    float dot(const Vec3f &other) const;
 
     Vec3f operator*(float k) const;
 

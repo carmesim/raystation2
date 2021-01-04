@@ -4,9 +4,11 @@
 #include "vector.h"
 #include <cmath>
 #include <cstdlib>
+#ifndef _EE
 #include <fstream>
 #include <iostream>
-#include <stdint.h>
+#endif
+#include <cstdint>
 #include <unistd.h>
 #include <vector>
 
@@ -17,23 +19,23 @@ struct gsGlobal *gs;
 struct gsTexture texBuffer;
 #endif
 
-const Vec3f origin = Vec3f(0, 0, 0);
+constexpr Vec3f origin {0, 0, 0};
 
-static const size_t width = 320;
-static const size_t height = 240;
+static constexpr size_t width = 320;
+static constexpr size_t height = 240;
 
 #ifdef _EE
 std::vector<u32> ps2Framebuffer;
 #else
-typedef uint32_t u32;
+using u32 = uint32_t;
 #endif
 
 void render(const std::vector<Sphere> &spheres, const std::vector<Light>&lights,
-            u32 *ps2Fb = NULL) {
-    const float fov      = M_PI/2.f;
+            u32 *ps2Fb = nullptr) {
+    const float fov      = static_cast<float>(M_PI)/2.f;
 #ifndef _EE
     std::vector<Vec3f> framebuffer;
-    framebuffer.resize(static_cast<size_t>(width*height));
+    framebuffer.resize(width*height);
     (void)(ps2Fb);
 #endif
 
@@ -59,9 +61,9 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light>&lights,
     {
         for (size_t col = 0; col < width; col++)
         {
-            uint16_t r = MAX(MIN(framebuffer[line * width + col].x, 1.0), 0.0) * 65535;
-            uint16_t g = MAX(MIN(framebuffer[line * width + col].y, 1.0), 0.0) * 65535;
-            uint16_t b = MAX(MIN(framebuffer[line * width + col].z, 1.0), 0.0) * 65535;
+            uint16_t r = std::max(std::min(framebuffer[line * width + col].x, 1.f), .0f) * 65535;
+            uint16_t g = std::max(std::min(framebuffer[line * width + col].y, 1.f), .0f) * 65535;
+            uint16_t b = std::max(std::min(framebuffer[line * width + col].z, 1.f), .0f) * 65535;
 
             outStream << r << ' ' << g << ' ' << b << "  ";
         }
@@ -111,15 +113,15 @@ int main() {
                   10.);                 // Specular exponent
 
     std::vector<Light> lights;
-    lights.push_back(Light(Vec3f(-20, 20,  20), 1.5));
-    lights.push_back(Light(Vec3f( 30, 50, -25), 1.8));
-    lights.push_back(Light(Vec3f( 30, 20,  30), 1.7));
+    lights.emplace_back(Vec3f(-20, 20,  20), 1.5);
+    lights.emplace_back(Vec3f( 30, 50, -25), 1.8);
+    lights.emplace_back(Vec3f( 30, 20,  30), 1.7);
 
     std::vector<Sphere> spheres;
-    spheres.push_back(Sphere(Vec3f(-3,    0,   -16), 2,      ivory));
-    spheres.push_back(Sphere(Vec3f(-1.0, -1.5, -12), 2, red_rubber));
-    spheres.push_back(Sphere(Vec3f( 1.5, -0.5, -18), 3, red_rubber));
-    spheres.push_back(Sphere(Vec3f( 7,    5,   -18), 4,      ivory));
+    spheres.emplace_back(Vec3f(-3,    0,   -16), 2,      ivory);
+    spheres.emplace_back(Vec3f(-1.0, -1.5, -12), 2, red_rubber);
+    spheres.emplace_back(Vec3f( 1.5, -0.5, -18), 3, red_rubber);
+    spheres.emplace_back(Vec3f( 7,    5,   -18), 4,      ivory);
 
     render(spheres, lights
 #ifdef _EE
